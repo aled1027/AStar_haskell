@@ -1,13 +1,8 @@
 import Control.Monad.State
 import Data.Tuple (swap)
 
-
-
 def :: (Int,Int) -> (Int,Int)
 def (x,y) = (x+1,y+1)
-
-    
-    
 
 idd (x,y) = (x,y)
 
@@ -19,7 +14,11 @@ go = do
     (x,y) <- get
     forM_ [1..10] (\x -> do
        modify idd)
-    return x
+    if True
+      then return 3
+      else return 2
+
+
 
 e = runState go (0,1)
 

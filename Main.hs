@@ -17,12 +17,11 @@ data Cell = O | G | A | E deriving (Show)
 
 type World = [[Cell]]
 type Pos = (Int,Int)
--- type SearchState = ([Pos],[Pos]) -- (openset, closedset)
-type SearchState = ([Pos],[Pos],Map.Map Pos Int) -- (openset, closedset, distMap)
+type SearchState = ([Pos],[Pos],Map.Map Pos Int, Int) -- (openset, closedset, gScoreMap)
 
 -- Input Settings
 worldSize = 10 
-startSearchState = ([(1,2)],[],startMap)  -- starts with first node on it
+startSearchState = ([(1,2)],[],startMap, 0)  -- starts with first node on it
 goal = (2,3)
 
 startMap = Map.fromList $ map (\x -> (x, startValue)) allPoints
@@ -40,34 +39,36 @@ heuristicDist _ _ = 1
 
 -- evalState/execState go startSearchState
 -- returns int + state monad (of type SearchState)
+
 go :: State SearchState Int
 go = do
   {- we always assume that our Maps will work, since they are preloaded -}
-  (current:a, b, c) <- get
+  (current:a, b, c, d) <- get
   -- remove current from openlist
-  modify (\(a,b,c) -> (tail a,b,c))
+  modify (\(a,b,c,d) -> (tail a,b,c,d))
   forM (getNeighbors current) 
     (\neighbor ->  do
-      modify (\(a,b,c) -> (a,neighbor:b,c))
-      (openList, closedList, distMap) <- get
+      modify (\(a,b,c,d) -> (a,neighbor:b,c,d))
+      (openList, closedList, gScoreMap, _) <- get
       if neighbor == goal
-        then modify id
+        then
+          modify (\(a,b,c,d) -> (a,b,c,1))
         else
           -- TODO this is always true due to above
           if neighbor `elem` closedList
             then modify id
             else 
-              let Just distFromOrigin = Map.lookup current distMap in
+              let Just distFromOrigin = Map.lookup current gScoreMap in
               let tentative_score =  distFromOrigin + (heuristicDist current neighbor) in
-              if (neighbor `elem` openList) == False || tentative_score < (fromJust ( Map.lookup neighbor distMap))
+              if (neighbor `elem` openList) == False || tentative_score < (fromJust ( Map.lookup neighbor gScoreMap))
                 then do
-                  modify (\(a,b,c) -> (a,b, Map.insert neighbor tentative_score c))
+                  modify (\(a,b,c,d) -> (a,b, Map.insert neighbor tentative_score c,d))
                   if (neighbor `elem` openList) == False
-                    then modify (\(a,b,c) -> (neighbor:a, b, c))
+                    then modify (\(a,b,c,d) -> (neighbor:a, b, c, d))
                     else modify id
                 else modify id
     )
-  (openList,_,_) <- get
+  (openList,_,_,isOver) <- get
   if null openList
     then return 1
     else do go

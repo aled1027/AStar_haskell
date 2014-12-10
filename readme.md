@@ -1,12 +1,14 @@
 http://www.reddit.com/r/dailyprogrammer/comments/2o5tb7/2014123_challenge_191_intermediate_space_probe/
 
 ---
+
 # Vim problems
 - even when directly called, settings in filetypes.vim aren't happening
 
 ---
 
 ### some notes
+
     - on data structures:
         - http://stackoverflow.com/questions/6976559/comparison-of-priority-queue-implementations-in-haskell
         - http://dev.stephendiehl.com/hask/#data-structures
@@ -94,6 +96,7 @@ A* =
             tentative_g_score = g_score[current] + dist_between(current,neighbor)
             if neighbor not in openset, or tentative_g_score < g_score[neighbor]
                 ... do things
+
 
 
 

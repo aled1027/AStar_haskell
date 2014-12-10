@@ -1,34 +1,17 @@
 http://www.reddit.com/r/dailyprogrammer/comments/2o5tb7/2014123_challenge_191_intermediate_space_probe/
 
----
-
-# Vim problems
-- even when directly called, settings in filetypes.vim aren't happening
 
 ---
+
 
 ### some notes
-
+    - on breaking loops
+        - www.haskellforall.com/2012/07/breaking-from-loop.html
     - on data structures:
         - http://stackoverflow.com/questions/6976559/comparison-of-priority-queue-implementations-in-haskell
         - http://dev.stephendiehl.com/hask/#data-structures
     - Think I'll just a list and sort it every once in a while...
         - not interested in priority queue right now. 
-
-    30% of the spots are "A" asteroids
-    10% of the spots are "G" gravity wells (explained below)
-    60% of the spots are "." empty space.
-
-- probe can't enter asteroid
-- prove can't enter any cell next to gravity:
-...........
-....XXX....
-....XGX....
-....XXX....
-...........
-
-- prove can move any of the 8 directions
-- no map wrapping
 
 ghci -i Main.hs Util.hs
 

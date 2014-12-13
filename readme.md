@@ -1,5 +1,15 @@
 http://www.reddit.com/r/dailyprogrammer/comments/2o5tb7/2014123_challenge_191_intermediate_space_probe/
 
+let a = 3
+
+
+  --runEitherT $ forM_ neighbors
+    -- when () $ do
+      -- liftInner $ exit ()
+  --where liftInner = id
+  --      exit = left
+http://www.stephendiehl.com/posts/vim_haskell.html
+
 
 ---
 

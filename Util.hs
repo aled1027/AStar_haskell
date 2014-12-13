@@ -33,3 +33,8 @@ shuffle' xs gen = runST (do
 
 shuffleIO :: [a] -> IO [a]
 shuffleIO xs = getStdRandom (shuffle' xs)
+
+fst'  (a,_,_,_) = a
+snd'  (_,b,_,_) = b
+trd'  (_,_,c,_) = c
+frth' (_,_,_,d) = d

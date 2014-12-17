@@ -1,6 +1,6 @@
 import Util
 import qualified Data.List.Split as DLS
-import qualified Data.List as DL ((\\))
+import qualified Data.List as DL ((\\), sortBy)
 import Data.Maybe (fromJust)
 import System.IO.Unsafe
 import qualified Data.Map as M
@@ -13,9 +13,11 @@ import Control.Monad.Trans
 import Debug.Trace
 
 {-
- - Why infinite loop????
- -  - change openList and closedList to priority queues based on fScoreMap as key
- -  - 
+ -
+ - Problem: it is infite looping because the openList is not implemented as a priority queue
+ -  --> so it never grabs the best. It just grabs the one on the head, finds that it isn't the goal, 
+ -      adds its neighbors to the list, and now the head of the list is one of the new neighbors. 
+ -      Then the process repeats. 
  -
  - https://downloads.haskell.org/~ghc/latest/docs/html/libraries/containers/Data-Map-Lazy.html
  -  - docs on Data.Map are for some reason here and not at Data.Map
@@ -46,6 +48,19 @@ x = 3
 type World = [[Cell]]
 type Pos = (Int,Int)
 type SearchState = ([Pos],[Pos],M.Map Pos Int, M.Map Pos Int) -- (openset, closedset, gScoreMap)
+type Key = Double
+type Value = Pos
+type PQPair = (Key,Value)
+type PQ = [PQPair]
+
+-- Priority Queue functions
+sortKV :: PQPair -> PQPair -> Ordering
+sortKV (k1,_) (k2,_) = compare k1 k2
+sortPQ xs = DL.sortBy sortKV xs
+headPQ ((a,p):_) = p
+popPQ (_:xs) = xs
+pushPQ k v xs = ((k,v):xs)
+elemPQ x xs = x `elem` values where values = map (\(_,p) -> p) xs
 
 -- Input Settings
 worldSize = 10 
@@ -71,7 +86,6 @@ heuristicDist u v = max dx dy
     where dx = abs (fst u - fst v)
           dy = abs (snd u - snd v)
 
--- The real algorithm
 preGo :: [[Cell]] -> State SearchState Int
 preGo world = do
   let heuristic_score = heuristicDist start goal
@@ -114,13 +128,14 @@ go world = do
                 modify (\(a,b,c,d) -> (neighbor:a, b, c,d))
          )
   (openList,_,gScoreMap, d) <- get
+
   if null openList
     then do return $ fromJust $ M.lookup goal gScoreMap
-    else do return $ fromJust $ M.lookup goal gScoreMap 
-    --else do go world
+    --else do return $ fromJust $ M.lookup goal gScoreMap 
+    else do go world
 
 start = (1,1)
-goal  = (1,2)
+goal  = (1,3)
 
 generateCells :: [Cell]
 generateCells = 

@@ -6,6 +6,8 @@ import Control.Monad
 import Control.Monad.ST
 import Data.STRef
 import Data.List
+
+
  
 -- | Randomly shuffle a list without the IO Monad
 --   /O(N)/

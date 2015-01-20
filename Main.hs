@@ -47,35 +47,40 @@ x = 3
 
 type World = [[Cell]]
 type Pos = (Int,Int)
-type SearchState = ([Pos],[Pos],M.Map Pos Int, M.Map Pos Int) -- (openset, closedset, gScoreMap)
+type SearchState = (PQ,[Pos],M.Map Pos Int, M.Map Pos Int) -- (openset, closedset, gScoreMap, fScoreMap)
 type Key = Double
 type Value = Pos
 type PQPair = (Key,Value)
 type PQ = [PQPair]
 
 -- Priority Queue functions
-sortKV :: PQPair -> PQPair -> Ordering
-sortKV (k1,_) (k2,_) = compare k1 k2
-sortPQ xs = DL.sortBy sortKV xs
-headPQ ((a,p):_) = p
-popPQ (_:xs) = xs
-pushPQ k v xs = ((k,v):xs)
-elemPQ x xs = x `elem` values where values = map (\(_,p) -> p) xs
+headPQ    :: PQ -> Value
+popPQ     :: PQ -> PQ
+pushPQ    :: Key -> Value -> PQ -> PQ
+sortKV    :: PQPair -> PQPair -> Ordering
+elemPQ    :: Value -> PQ -> Bool
+notElemPQ :: Value -> PQ -> Bool
+headPQ ((a,p):_)      = p
+popPQ (_:xs)          = xs
+pushPQ k v xs         = sortPQ ((k,v):xs)
+sortKV (k1,_) (k2,_)  = compare k1 k2
+sortPQ xs             = DL.sortBy sortKV xs
+elemPQ x xs           = x `elem` values where values = map (\(_,p) -> p) xs
+notElemPQ x xs        = not $ x `elemPQ` xs
 
 -- Input Settings
 worldSize = 10 
-startSearchState = ([start],[],startMap, startFScoreMap)  -- starts with first node on it
-
+start = (1,1)
+goal  = (10,10)
+startSearchState = (pushPQ 0 start [],[],startMap, startFScoreMap)  -- starts with first node on it
 startMap = M.fromList $ map (\x -> (x, startValue)) allPoints
   where allPoints = (,) <$> [1..worldSize] <*> [1..worldSize]
         startValue = 0
-
 startFScoreMap = M.fromList $ map (\x -> (x, startValue)) allPoints
   where allPoints = (,) <$> [1..worldSize] <*> [1..worldSize]
         startValue = 0
 
-getNeighbors' p@(x,y) = [(x,y+1)]
-
+getNeighbors' p@(x,y) = [(x,y+4)]
 getNeighbors p@(x,y) = filter (\(u,v) -> u > 0 && v > 0) possibleNeighbors 
     where delta = [-1, 0, 1]
           xs = map (+x) delta
@@ -91,16 +96,25 @@ preGo world = do
   let heuristic_score = heuristicDist start goal
   modify (\(a,b,c,d) -> (a,b, c,M.insert start heuristic_score d))
   go world
-
-
+ 
+ 
 go :: [[Cell]] -> State SearchState Int
 go world = do
   {-
    - This is the main loop of the a star program.
    - The things that happen before the loop happen in prego.
+   -
+   - (openList,closedList,gMap,fMap)
+   - openlist is a priority queue of the nodes to check
+   - closedList is a list of the nodes which have already been checked
+   - gMap maps Node -> distance and represents the calculated, real distance from origin to the node origin
+   - fMap maps Node -> distance and represents the distance 
+   -
+   -
    -}
-  (current:_, _, _, _) <- get
-  modify (\(a,b,c,d) -> (tail a,current:b,c,d))
+  (c, _, _, _) <- get
+  let current = headPQ c
+  modify (\(a,b,c,d) -> (popPQ a,current:b,c,d))
   if (current == goal) 
     then do
         (_, _, gScoreMap,_) <- get
@@ -113,19 +127,19 @@ go world = do
         (\neighbor -> do
           (openList, closedList, gScoreMap,_) <- get
           when (neighbor `notElem` closedList) $ do
-
+            modify id
             let Just distFromOrigin       = M.lookup current gScoreMap
             let dist_current_to_neighbor  = 1
             let tentative_score           = distFromOrigin + dist_current_to_neighbor
-
             let Just neighbor_score       = M.lookup neighbor gScoreMap
-            let bool = neighbor `notElem` openList || tentative_score < neighbor_score
+            let bool = neighbor `notElemPQ` openList || tentative_score < neighbor_score
             when bool $ do
               modify (\(a,b,c,d) -> (a,b
                             , M.insert neighbor tentative_score c
                             , M.insert neighbor (neighbor_score + (heuristicDist neighbor goal)) d))
-              when (neighbor `notElem` openList) $ do
-                modify (\(a,b,c,d) -> (neighbor:a, b, c,d))
+              when (neighbor `notElemPQ` openList) $ do
+                let n_score = fromIntegral $ neighbor_score + (heuristicDist neighbor goal)
+                modify (\(a,b,c,d) -> (pushPQ n_score neighbor a, b, c,d))
          )
   (openList,_,gScoreMap, d) <- get
 
@@ -133,9 +147,6 @@ go world = do
     then do return $ fromJust $ M.lookup goal gScoreMap
     --else do return $ fromJust $ M.lookup goal gScoreMap 
     else do go world
-
-start = (1,1)
-goal  = (1,3)
 
 generateCells :: [Cell]
 generateCells = 
